@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Vacaciones para DPC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            padding: 20px; /* Mantenemos un padding para que no se pegue a los bordes del embed */
+            background-color: transparent; /* Fondo transparente */
+            /* Se eliminan flex, align, justify y min-height para el embedding */
+        }
+
+        .calculator-container {
+            background-color: transparent; /* Fondo del contenedor transparente */
+            padding: 0; /* El padding se maneja ahora en el body */
+            border-radius: 10px;
+            box-shadow: none; /* Sin sombra */
+            width: 100%;
+            max-width: 500px;
+            margin: auto; /* Para centrar el contenedor */
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #586c74;
+        }
+
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input[type="date"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #586c74;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #586c74;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #47575e;
+        }
+
+        #result-container {
+            margin-top: 25px;
+            text-align: center;
+        }
+        
+        .error-message {
+            color: #D32F2F;
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th {
+            background-color: #586c74;
+            color: white;
+            font-weight: bold;
+            padding: 10px;
+            text-align: center;
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+        }
+        
+        /* Colores acorde con la web */
+        td:nth-child(2),
+        td:nth-child(3) {
+            background-color: rgba(224, 224, 224, 0.5);
+        }
+
+        td:first-child {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            width: 150px;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="calculator-container">
+        <h1>Calculadora de Vacaciones para DPC</h1>
+
+        <div class="input-group">
+            <label for="startDate">Fecha de inicio de campaña</label>
+            <input type="date" id="startDate">
+        </div>
+
+        <div class="input-group">
+            <label for="endDate">Fecha de fin de campaña</label>
+            <input type="date" id="endDate">
+        </div>
+
+        <button onclick="calculateProration()">Calcular vacaciones</button>
+
+        <div id="result-container">
+            <!-- Los resultados se mostrarán aquí -->
+        </div>
+        <div id="error-container" class="error-message">
+            <!-- Los mensajes de error se mostrarán aquí -->
+        </div>
+
+    </div>
+
+    <script>
+        function calculateProration() {
+            // --- Variables Fijas ---
+            const holidaysPerYear = 19; // Días de vacaciones anuales que tienen los DPC.
+
+            // Obtener elementos del DOM
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const resultContainer = document.getElementById('result-container');
+            const errorContainer = document.getElementById('error-container');
+
+            // Limpiar resultados y errores anteriores
+            resultContainer.innerHTML = '';
+            errorContainer.innerHTML = '';
+            
+            // Obtener valores
+            const startDateStr = startDateInput.value;
+            const endDateStr = endDateInput.value;
+
+            // --- Validación ---
+            if (!startDateStr || !endDateStr) {
+                errorContainer.textContent = 'Por favor, seleccione una fecha de inicio y de fin.';
+                return;
+            }
+
+            const startDate = new Date(startDateStr);
+            const endDate = new Date(endDateStr);
+
+            if (endDate < startDate) {
+                errorContainer.textContent = 'La fecha de fin no puede ser anterior a la fecha de inicio.';
+                return;
+            }
+
+            // Validación para el periodo máximo de un año, si es más de un año no tiene sentido que estén usando esto
+            const oneYearLater = new Date(startDate.getTime());
+            oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+            if (endDate >= oneYearLater) {
+                errorContainer.textContent = 'Debes seleccionar un periodo máximo de un año';
+                return;
+            }
+            
+            // --- Cálculo ---
+            // Calcular la diferencia en tiempo
+            const timeDifference = endDate.getTime() - startDate.getTime();
+            
+            // Convertir milisegundos a días y sumar 1 para incluir el día de inicio (checkear con Victor si él suma uno o no)
+            const daysEmployed = (timeDifference / (1000 * 3600 * 24)) + 1;
+            
+            // Determinar si es un año bisiesto para un conteo anual de días preciso (?) Esto no hace falta, creo que Excel no da para tanto
+            //const startYear = startDate.getFullYear();
+            //const isLeapYear = (startYear % 4 === 0 && startYear % 100 !== 0) || (startYear % 400 === 0);
+            //const daysInYear = isLeapYear ? 366 : 365;
+            const daysInYear = 365;
+
+            // Prorratear las vacaciones y redondear siempre hacia arriba
+            const proratedHolidaysRaw = (daysEmployed / daysInYear) * holidaysPerYear;
+            const proratedHolidays = Math.ceil(proratedHolidaysRaw);
+
+            // --- Mostrar Resultados ---
+            const resultHTML = `<h2 style="color: #586c74;">Vacaciones totales: ${proratedHolidays} días</h2>`;
+            
+            resultContainer.innerHTML = resultHTML;
+        }
+    </script>
+
+</body>
+
+</html>
